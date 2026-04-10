@@ -24,8 +24,9 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/spf13/cobra"
-	"github.com/yetone/smart-suggestion/pkg"
 	"golang.org/x/term"
+
+	"github.com/yetone/smart-suggestion/pkg"
 )
 
 // OpenAI API structures
@@ -55,14 +56,18 @@ type OpenAIError struct {
 
 // Azure OpenAI uses the same structures as OpenAI but different API endpoints and authentication
 // Azure OpenAI API structures (reuse OpenAI structures)
-type AzureOpenAIRequest = OpenAIRequest
-type AzureOpenAIResponse = OpenAIResponse
-type AzureOpenAIError = OpenAIError
+type (
+	AzureOpenAIRequest  = OpenAIRequest
+	AzureOpenAIResponse = OpenAIResponse
+	AzureOpenAIError    = OpenAIError
+)
 
 // DeepSeek API is OpenAI-compatible, reuse the same structures
-type DeepSeekRequest = OpenAIRequest
-type DeepSeekResponse = OpenAIResponse
-type DeepSeekError = OpenAIError
+type (
+	DeepSeekRequest  = OpenAIRequest
+	DeepSeekResponse = OpenAIResponse
+	DeepSeekError    = OpenAIError
+)
 
 // parseAndExtractCommand parses the raw response from the AI model,
 // separating the reasoning from the command.
@@ -290,28 +295,28 @@ func init() {
 }
 
 func main() {
-	var rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:   "smart-suggestion",
 		Short: "AI-powered smart suggestions for shell commands",
 		Run:   runFetch,
 	}
 
 	// Add proxy command
-	var proxyCmd = &cobra.Command{
+	proxyCmd := &cobra.Command{
 		Use:   "proxy",
 		Short: "Start shell proxy mode to record commands and output",
 		Run:   runProxy,
 	}
 
 	// Add rotate-logs command
-	var rotateCmd = &cobra.Command{
+	rotateCmd := &cobra.Command{
 		Use:   "rotate-logs",
 		Short: "Rotate log files to prevent them from growing too large",
 		Run:   runRotateLogs,
 	}
 
 	// Add version command
-	var versionCmd = &cobra.Command{
+	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "Show version information",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -324,7 +329,7 @@ func main() {
 	}
 
 	// Add update command
-	var updateCmd = &cobra.Command{
+	updateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update smart-suggestion to the latest version",
 		Run:   runUpdate,
@@ -424,7 +429,7 @@ func runFetch(cmd *cobra.Command, args []string) {
 		}
 
 		errorMsg := fmt.Sprintf("Error fetching suggestions from %s API: %v", provider, err)
-		if err := os.WriteFile("/tmp/.smart_suggestion_error", []byte(errorMsg), 0644); err != nil {
+		if err := os.WriteFile("/tmp/.smart_suggestion_error", []byte(errorMsg), 0o644); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to write error file: %v\n", err)
 		}
 		os.Exit(1)
@@ -442,7 +447,7 @@ func runFetch(cmd *cobra.Command, args []string) {
 		})
 	}
 
-	if err := os.WriteFile(outputFile, []byte(finalSuggestion), 0644); err != nil {
+	if err := os.WriteFile(outputFile, []byte(finalSuggestion), 0o644); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to write suggestion to file: %v\n", err)
 		os.Exit(1)
 	}
@@ -758,7 +763,7 @@ func writeToLogFile(logFilePath, content string) error {
 		// Continue with logging even if rotation fails
 	}
 
-	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
@@ -1103,12 +1108,12 @@ func getShellHistory() (string, error) {
 func createProcessLock(lockPath string) (*os.File, error) {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(lockPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create lock directory: %w", err)
 	}
 
 	// Try to create and lock the file
-	file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0644)
+	file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0o644)
 	if err != nil {
 		if os.IsExist(err) {
 			// Check if the process is still running
@@ -1118,7 +1123,7 @@ func createProcessLock(lockPath string) (*os.File, error) {
 			// Remove stale lock file
 			os.Remove(lockPath)
 			// Try again
-			file, err = os.OpenFile(lockPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0644)
+			file, err = os.OpenFile(lockPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0o644)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create lock file: %w", err)
 			}
@@ -1498,7 +1503,7 @@ func runProxy(cmd *cobra.Command, args []string) {
 	}
 
 	// Open session log file for writing
-	logFile, err := os.OpenFile(sessionLogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logFile, err := os.OpenFile(sessionLogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		if debug {
 			logDebug("Failed to open session log file", map[string]any{
@@ -2009,7 +2014,7 @@ func downloadAndInstallUpdate(downloadURL string) error {
 	}
 
 	// Make executable
-	if err := os.Chmod(currentBinary, 0755); err != nil {
+	if err := os.Chmod(currentBinary, 0o755); err != nil {
 		return err
 	}
 
@@ -2103,11 +2108,11 @@ func extractTarGz(src, dest string) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(path, 0755); err != nil {
+			if err := os.MkdirAll(path, 0o755); err != nil {
 				return err
 			}
 		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 				return err
 			}
 
