@@ -46,25 +46,27 @@ if [[ "$SMART_SUGGESTION_DEBUG" == 'true' ]]; then
 fi
 
 # Detect binary path
-if [[ -z "$SMART_SUGGESTION_BINARY" ]]; then
-    candidates=(
-        "${0:a:h}/smart-suggestion"
-        "$HOME/.config/smart-suggestion/smart-suggestion"
-    )
-    for bin in "${candidates[@]}"; do
-        if [[ -f "$bin" ]]; then
-            typeset -g SMART_SUGGESTION_BINARY="$bin"
-            break
-        fi
-    done
-    if [[ -z "$SMART_SUGGESTION_BINARY" ]]; then
-        echo "No available smart-suggestion binary found. Please ensure that it is installed correctly or set SMART_SUGGESTION_BINARY to a valid binary path."
-        return 1
-    fi
+if [[ -x "${SMART_SUGGESTION_BINARY:-}" ]]; then
+    typeset -g SMART_SUGGESTION_BINARY="$SMART_SUGGESTION_BINARY"
 else
-    if [[ ! -f "$SMART_SUGGESTION_BINARY" ]]; then
-        echo "smart-suggestion binary not found at $SMART_SUGGESTION_BINARY."
-        return 1
+    # Check if smart-suggestion is in PATH
+    if command -v smart-suggestion &> /dev/null; then
+        typeset -g SMART_SUGGESTION_BINARY=$(command -v smart-suggestion)
+    else
+        candidates=(
+            "${0:a:h}/smart-suggestion"
+            "$HOME/.config/smart-suggestion/smart-suggestion"
+        )
+        for bin in "${candidates[@]}"; do
+            if [[ -x "$bin" ]]; then
+                typeset -g SMART_SUGGESTION_BINARY="$bin"
+                break
+            fi
+        done
+        if [[ -z "$SMART_SUGGESTION_BINARY" ]]; then
+            echo "No available smart-suggestion binary found. Please ensure that it is installed correctly or set SMART_SUGGESTION_BINARY to a valid binary path."
+            return 1
+        fi
     fi
 fi
 
